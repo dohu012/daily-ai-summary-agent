@@ -1,0 +1,46 @@
+name: Daily AI Summary Agent
+
+on:
+  schedule:
+    # 北京时间每天早上 8:00 (UTC 0:00)
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+jobs:
+  run-agent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Daily AI Summary Agent
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPSEEK_BASE_URL: ${{ secrets.DEEPSEEK_BASE_URL }}
+          DEEPSEEK_MODEL: ${{ secrets.DEEPSEEK_MODEL }}
+          IMAP_SERVER: ${{ secrets.IMAP_SERVER }}
+          IMAP_PORT: ${{ secrets.IMAP_PORT }}
+          EMAIL_ACCOUNT: ${{ secrets.EMAIL_ACCOUNT }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+          GOOGLE_TOKEN_JSON: ${{ secrets.GOOGLE_TOKEN_JSON }}
+          TRACE_DIR: ./traces
+          OUTPUT_DIR: ./output
+        run: python main.py
+
+      - name: Upload traces as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-traces
+          path: ./traces/
+          retention-days: 30
